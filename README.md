@@ -1,5 +1,13 @@
 # DeepFair_With_JAX
-Reimplementation of DeepFair: Deep Learning for Improving Fairness in Recommender Systems.
+Reimplementation of [DeepFair: Deep Learning for Improving Fairness in Recommender Systems](https://arxiv.org/pdf/2006.05255v1.pdf) with [JAX](https://github.com/google/jax) and [Haiku](https://github.com/deepmind/dm-haiku). Uses just-in-time (JIT) compiling to speed up training and evaluation process.
+
+# Dataset
+[MovieLens 1M Dataset](https://grouplens.org/datasets/movielens/1m/). Same as the dataset used for experiment in DeepFair's research paper.
+
+# Creating Training Data
+'''
+python test.py
+'''
 
 # References
 1. Jesús Bobadilla, Raúl Lara-Cabrera, Ángel González-Prieto, Fernando Ortega, (2020). DeepFair: Deep Learning for Improving Fairness in Recommender Systems[online]. Avaliable from :arXiv:2006.05255.
