@@ -1,4 +1,4 @@
-# DeepFair_With_JAX
+# DeepFair With JAX
 Reimplementation of [DeepFair: Deep Learning for Improving Fairness in Recommender Systems](https://arxiv.org/pdf/2006.05255v1.pdf) with [JAX](https://github.com/google/jax) and [Haiku](https://github.com/deepmind/dm-haiku). Uses **just-in-time (JIT)** compiling to speed up training and evaluation process. Feel free to assign an issue if there is any suggestions or corrections to improve the code.
 
 # Dataset
