@@ -20,7 +20,7 @@ This script will use `experiment_data.npz` to train the model. The parameters fo
 Coming soon.
 
 # Future Plans
-Optimising the training. Implement `test.py` for evaluation to achieve results as close as. Implement the model in other frameworks and compare **JIT** performance between frameworks.
+Optimising the training. Implement `test.py` for evaluation to achieve results as close as the research paper. Implement the model in other frameworks and compare **JIT** performance between frameworks.
 
 # References
 1. Jesús Bobadilla, Raúl Lara-Cabrera, Ángel González-Prieto, Fernando Ortega, (2020). DeepFair: Deep Learning for Improving Fairness in Recommender Systems[online]. Avaliable from :arXiv:2006.05255.
