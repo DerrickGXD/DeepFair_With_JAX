@@ -14,7 +14,7 @@ This script will generate `experiment_data.npz` which contains input vectors and
 ```
 python train.py
 ```
-This script will use `experiment_data.npz` to train the model. The parameters for training, e.g batch, learning rate, has=ve not been optimised yet. After complete training, the parameters for model will be saved in `best_param.pkl` file.
+This script will use `experiment_data.npz` to train the model. The parameters for training, e.g batch, learning rate, have not been optimised yet. After complete training, the parameters for model will be saved in `best_param.pkl` file.
 
 # Testing Data
 Coming soon.
