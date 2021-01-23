@@ -23,6 +23,10 @@ import pickle
 
 warnings.filterwarnings("ignore")
 
+test1 = jnp.array([1,2,3,4,5])
+test2 = 10
+print(test1 * test2)
+
 class MLN(hk.Module):
     
     def __init__(self):
@@ -42,6 +46,12 @@ class MLN(hk.Module):
         
         return x
 
+def split_shuffle_data(arr):
+    np.random.shuffle(arr)
+    data_len = arr.shape[0]
+    vector_len = arr.shape[1]
+
+    return arr[:,:vector_len-3], arr[:,-3].reshape(data_len,1), arr[:,-2].reshape(data_len,1), arr[:,-1].reshape(data_len,1)
 
 #Split training and testing data to approximately 80% and 20%
 batch = 11
@@ -60,16 +70,24 @@ lr = 1e-4
 print("Loading data ...")
 data = np.load('experiment_data.npz')
 
-
 experiment_data = data['experiment_data'][:training_num_data]
 accuracy_data = data['accuracy_data'][:training_num_data]
 fairness_data = data['fairness_data'][:training_num_data]
 beta_data = data['beta_data'][:training_num_data]
 
+print("Shuffling data ...")
+concat_array = np.concatenate((experiment_data,accuracy_data,fairness_data,beta_data), axis=1)
+experiment_data, accuracy_data, fairness_data, beta_data = split_shuffle_data(concat_array)
+
 experiment_data_jnp = jnp.asarray(experiment_data, dtype=np.float32)
+
+
 accuracy_data_jnp = jnp.asarray(accuracy_data, dtype=np.float32)
 fairness_data_jnp = jnp.asarray(fairness_data, dtype=np.float32)
 beta_data_jnp = jnp.asarray(beta_data, dtype=np.float32)
+
+training_batch_size = 4*batch
+num_batch = int(training_num_data/training_batch_size)
 
 def MLN_fn(data):
     mln = MLN()
@@ -95,7 +113,7 @@ rng = jax.random.PRNGKey(42)
 params = model.init(rng, experiment_data_jnp)
 opt = optax.rmsprop(lr)
 opt_state = opt.init(params)
-training_batch = 30*batch
+
 
 
 print("Start Training ...")
@@ -103,12 +121,10 @@ for epoch in range(n_epochs):
     loss = 0
     cur_time = time.time()
 
-    for i in range(0,training_num_data,training_batch):
-        start = i
-        end = i + training_batch
-        if(end > training_num_data):
-            end = training_num_data
- 
+    for i in range(num_batch):
+        start = i * training_batch_size
+        end = start + training_batch_size
+
         input_data = experiment_data_jnp[start:end,:]
         accuracy = accuracy_data_jnp[start:end,:]
         fairness = fairness_data_jnp[start:end,:]
@@ -116,8 +132,9 @@ for epoch in range(n_epochs):
 
         grads = grad(loss_fn)(params,input_data,accuracy,fairness,beta)
         params = update(grads, opt_state, params)
-        
+
         loss += loss_fn(params,input_data,accuracy,fairness,beta)
+
 
     average_loss = loss/ceil(training_num_data/training_batch)
     print("Epoch {epoch} : {loss}".format(epoch=epoch,loss=average_loss))

@@ -15,7 +15,7 @@ import nimfa
 import scipy.sparse as sp
 import pandas as pd
 import warnings
-
+import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore")
 
@@ -56,7 +56,6 @@ for row in merged_data.itertuples(index=False):
     else:
         male_arr[user_id] = 1
     rating_matrix[user_id,movie_id] = row.Rating
-
 
 threshold = 3 #Indifference set (Refer to paper)
 like_matrix = np.where(rating_matrix >= threshold, 1, 0) #Each row, column represents user and movie. Value is 1 if user likes the movie, otherwise 0. 
@@ -114,65 +113,97 @@ for i in range(user_num):
     normalise_factor = (5-threshold) * np.sum(voted_movies)
     UM[i] = np.sum(movies_rating*IM*voted_movies)/normalise_factor
 
-print("Normalising IM and UM ...")
-IM = (IM - IM.min())/(IM.max()-IM.min())
-UM = (UM - UM.min())/(UM.max()-UM.min())
 
 
-r_true = np.zeros((user_num,movie_num))
-r_true = rating_matrix
-
-beta_list = []
-batch = 11
-for i in range(batch):
-    beta_list.append(i*0.1)
-
-beta_loss = np.array(beta_list)
-beta = np.array(beta_list).reshape(-1,1) #List of beta values to balance fairness and accuracy.
-
-#Reduce rating matrix dimension
-pmf = nimfa.Pmf(rating_matrix, seed="random_vcol", rank=30, max_iter=5, rel_error=1e-5)
-print("Reducing Matrix Dimension with PMF...")
-pmf_fit = pmf()
-print("Reducing Complete")
-
-P = pmf_fit.basis()
-Q = pmf_fit.coef().T
-print("User matrix has shape of : {shape}".format(shape=P.shape))
-print("Item matrix has shape of : {shape}".format(shape=Q.shape))
-
-#Replace rating matrix with approximated matrix
-rating_matrix = P @ Q.T
-
-#Input data for neural network. For each rating, each vector is concatenation of user hidden factor, 
-#item hidden factor and a beta value. 
-experiment_data = np.zeros((rating_num*batch, 61)) 
-#E_Accuracy required for loss function.
-accuracy_data = np.zeros((rating_num*batch, 1))
-#E_Fairness required for loss function.
-fairness_data = np.zeros((rating_num*batch, 1))
-#Beta required for loss function
-beta_data = np.zeros((rating_num*batch, 1))
+IM_new = np.around(IM, decimals=1)
+UM_new = np.around(UM, decimals=1)
 
 
-print("Storing Data for Experiment...")
-index = 0
-for row in merged_data.itertuples(index=False):
-    user_id = row.UserID
-    movie_id = row.MovieID
-    p = np.squeeze(np.asarray(P[user_id])) #user_hidden_factor
-    q = np.squeeze(np.asarray(Q[movie_id])) #item_hidden_factor
-    pq = np.hstack((p,q))
-    e_fairness = IM[movie_id] - UM[user_id]
-    e_accuracy = r_true[user_id,movie_id]
-    for i in range(batch):
-        experiment_data[index,:] = np.hstack((pq,beta[i]))
-        fairness_data[index,:] = np.array([e_fairness]) 
-        beta_data[index,:] = np.array([beta[i]])
-        accuracy_data[index,:] = np.array([e_accuracy])
-        index += 1
+(IM_val, IM_freq) = np.unique(IM_new, return_counts=True)
+(UM_val, UM_freq) = np.unique(UM_new, return_counts=True)
 
-print("Saving Data for Experiment...")
-np.savez("experiment_data.npz", experiment_data=experiment_data, accuracy_data=accuracy_data, fairness_data=fairness_data, beta_data=beta_data)
 
-print("Complete")
+UM_val = np.insert(UM_val,0,-1)
+UM_val = np.append(UM_val,1)
+UM_freq = np.insert(UM_freq,0,0)
+UM_freq = np.append(UM_freq,0)
+
+
+#normalise IM_freq and UM_freq
+IM_freq = IM_freq/IM_freq.max()
+UM_freq = UM_freq/UM_freq.max()
+
+#Get UM in male and female category
+UM_male = UM * male_arr
+UM_male = UM_male[UM_male!=0]
+UM_female = UM * female_arr
+UM_female = UM_female[UM_female!=0]
+
+UM_male_new = np.around(UM_male, decimals=2)
+UM_female_new = np.around(UM_female, decimals=2)
+
+
+(UM_male_val, UM_male_freq) = np.unique(UM_male_new, return_counts=True)
+(UM_female_val, UM_female_freq) = np.unique(UM_female_new, return_counts=True)
+UM_male_freq = UM_male_freq/UM_male_freq.max()
+UM_female_freq = UM_female_freq/UM_female_freq.max()
+
+
+UM_male_val = np.insert(UM_male_val,0,-1)
+UM_male_val = np.append(UM_male_val,1)
+UM_male_freq = np.insert(UM_male_freq,0,0)
+UM_male_freq = np.append(UM_male_freq,0)
+
+UM_female_val = np.insert(UM_female_val,0,-1)
+UM_female_val = np.append(UM_female_val,1)
+UM_female_freq = np.insert(UM_female_freq,0,0)
+UM_female_freq = np.append(UM_female_freq,0)
+
+#Calculate users classications accuracy based on UM
+UM_male_accurate = np.where(UM_male > 0, 1, 0) #1 if correctly classified, else 0
+UM_male_correct = np.count_nonzero(UM_male_accurate)
+UM_male_incorrect = UM_male.shape[0] - UM_male_correct
+UM_male_accuracy = UM_male_correct*100/UM_male.shape[0]
+UM_male_accuracy = round(UM_male_accuracy, 2)
+
+UM_female_accurate = np.where(UM_female < 0, 1, 0) #1 if correctly classified, else 0
+UM_female_correct = np.count_nonzero(UM_female_accurate)
+UM_female_incorrect = UM_female.shape[0] - UM_female_correct
+UM_female_accuracy = UM_female_correct*100/UM_female.shape[0]
+UM_female_accuracy = round(UM_female_accuracy, 2)
+
+UM_accuracy_table = [
+    ["Category", "Correct", "Incorrect", "Correct%"],
+    ["Female", UM_female_correct, UM_female_incorrect, UM_female_accuracy],
+    ["Male", UM_male_correct, UM_male_incorrect, UM_male_accuracy]
+]
+
+plt.subplots_adjust(left=0.125, right=0.9, bottom=0.15, top=0.9, wspace=0.5, hspace=0.5)
+plt.subplot(221)
+plt.bar(["Male","Female"], [np.sum(male_arr),np.sum(female_arr)])
+plt.title("Number of users")
+plt.subplot(222)
+plt.plot(IM_val, IM_freq, 'g-', label='items')
+plt.plot(UM_val, UM_freq, 'k--', label='users')
+plt.xlabel("minority value")
+plt.ylabel("scaled number of items and number of users", fontsize='small')
+plt.title("IM and UM distributions")
+plt.legend(loc='upper right', fontsize='small')
+plt.subplot(223)
+plt.plot(UM_male_val, UM_male_freq, 'b--', label='male')
+plt.plot(UM_female_val, UM_female_freq, 'r-', label='female')
+plt.xlabel("minority value")
+plt.ylabel("scaled number of items and number of users", fontsize='small')
+plt.title("UM Comparative")
+plt.legend(loc='upper right', fontsize='small')
+plt.subplot(224)
+table = plt.table(cellText=UM_accuracy_table, loc='center', fontsize='medium')
+table.scale(1, 3)
+table.auto_set_font_size(False)
+table.set_fontsize('small')
+plt.title("User Classification via UM")
+plt.axis('off')
+
+plt.show()
+
+
