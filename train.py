@@ -23,9 +23,6 @@ import pickle
 
 warnings.filterwarnings("ignore")
 
-test1 = jnp.array([1,2,3,4,5])
-test2 = 10
-print(test1 * test2)
 
 class MLN(hk.Module):
     
