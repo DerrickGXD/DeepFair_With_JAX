@@ -163,7 +163,7 @@ for row in merged_data.itertuples(index=False):
     p = np.squeeze(np.asarray(P[user_id])) #user_hidden_factor
     q = np.squeeze(np.asarray(Q[movie_id])) #item_hidden_factor
     pq = np.hstack((p,q))
-    e_fairness = IM[movie_id] - UM[user_id]
+    e_fairness = (IM[movie_id] - UM[user_id])**2
     e_accuracy = r_true[user_id,movie_id]
     for i in range(batch):
         experiment_data[index,:] = np.hstack((pq,beta[i]))

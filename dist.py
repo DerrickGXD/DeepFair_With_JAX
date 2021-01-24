@@ -101,6 +101,10 @@ for i in range(movie_num):
 #IM is Item Minority Index.
 IM = (J_M - J_m)
 
+#IM is [-2,2], normalise to [-1,1]
+IM = (IM - IM.min())/(IM.max()-IM.min())
+IM = (2*IM)-1
+
 
 print("Calculating User Minority Index...")
 #UM is User Minority Index.
@@ -115,8 +119,8 @@ for i in range(user_num):
 
 
 
-IM_new = np.around(IM, decimals=1)
-UM_new = np.around(UM, decimals=1)
+IM_new = np.around(IM, decimals=2)
+UM_new = np.around(UM, decimals=2)
 
 
 (IM_val, IM_freq) = np.unique(IM_new, return_counts=True)
@@ -200,7 +204,7 @@ plt.subplot(224)
 table = plt.table(cellText=UM_accuracy_table, loc='center', fontsize='medium')
 table.scale(1, 3)
 table.auto_set_font_size(False)
-table.set_fontsize('small')
+table.set_fontsize('medium')
 plt.title("User Classification via UM")
 plt.axis('off')
 

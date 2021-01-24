@@ -23,7 +23,6 @@ import pickle
 
 warnings.filterwarnings("ignore")
 
-
 class MLN(hk.Module):
     
     def __init__(self):
@@ -35,11 +34,12 @@ class MLN(hk.Module):
     
     def __call__(self, x):
         x = self.input_layer(x)
+        x = jax.nn.relu(x)
         x = self.internal_1(x)
         x = jax.nn.relu(x)
         x = hk.dropout(self.rng,0.2,x)
         x = self.internal_2(x)
-        x = jax.nn.relu(x)
+        x = jax.nn.sigmoid(x)
         
         return x
 
@@ -61,7 +61,7 @@ testing_num_data = testing_num_rating*batch
 filename = "best_param"
 outfile = open(filename,'wb')
 
-n_epochs = 10
+n_epochs = 3
 lr = 1e-4
 
 print("Loading data ...")
@@ -72,18 +72,20 @@ accuracy_data = data['accuracy_data'][:training_num_data]
 fairness_data = data['fairness_data'][:training_num_data]
 beta_data = data['beta_data'][:training_num_data]
 
-print("Shuffling data ...")
-concat_array = np.concatenate((experiment_data,accuracy_data,fairness_data,beta_data), axis=1)
-experiment_data, accuracy_data, fairness_data, beta_data = split_shuffle_data(concat_array)
+#Normalise accuracy [0,1]
+accuracy_data = (accuracy_data - accuracy_data.min())/(accuracy_data.max()-accuracy_data.min())
+#fairness_data = (fairness_data - fairness_data.min())/(fairness_data.max()-fairness_data.min())
+
+# print("Shuffling data ...")
+# concat_array = np.concatenate((experiment_data,accuracy_data,fairness_data,beta_data), axis=1)
+# experiment_data, accuracy_data, fairness_data, beta_data = split_shuffle_data(concat_array)
 
 experiment_data_jnp = jnp.asarray(experiment_data, dtype=np.float32)
-
-
 accuracy_data_jnp = jnp.asarray(accuracy_data, dtype=np.float32)
 fairness_data_jnp = jnp.asarray(fairness_data, dtype=np.float32)
 beta_data_jnp = jnp.asarray(beta_data, dtype=np.float32)
 
-training_batch_size = 4*batch
+training_batch_size = 29*batch
 num_batch = int(training_num_data/training_batch_size)
 
 def MLN_fn(data):
@@ -91,10 +93,10 @@ def MLN_fn(data):
     return mln(data)
 
 @jit
-def loss_fn(params, input_data, accuracy, fairness, beta):
+def loss_fn(params, input_data, accuracy, fairness, beta, i):
     out = model.apply(params, rng, input_data)
     e_accuracy = (out - accuracy)**2
-    e_fairness = fairness
+    e_fairness = ((1-out) - fairness)**2 #If IM and UM difference is low, recommendation score should be high to minimize fairness
     loss = beta*e_accuracy + (1-beta)*e_fairness
     final_loss = jnp.mean(loss)
     return final_loss
@@ -110,9 +112,7 @@ rng = jax.random.PRNGKey(42)
 params = model.init(rng, experiment_data_jnp)
 opt = optax.rmsprop(lr)
 opt_state = opt.init(params)
-
-
-
+previous_loss = float('inf')
 print("Start Training ...")
 for epoch in range(n_epochs):
     loss = 0
@@ -126,17 +126,14 @@ for epoch in range(n_epochs):
         accuracy = accuracy_data_jnp[start:end,:]
         fairness = fairness_data_jnp[start:end,:]
         beta = beta_data_jnp[start:end,:]
-
-        grads = grad(loss_fn)(params,input_data,accuracy,fairness,beta)
+        grads = grad(loss_fn)(params,input_data,accuracy,fairness,beta,i)
+        loss += loss_fn(params,input_data,accuracy,fairness,beta,i)
         params = update(grads, opt_state, params)
 
-        loss += loss_fn(params,input_data,accuracy,fairness,beta)
-
-
-    average_loss = loss/ceil(training_num_data/training_batch)
+    average_loss = loss/num_batch
     print("Epoch {epoch} : {loss}".format(epoch=epoch,loss=average_loss))
-    print("Time taken", time.time()-cur_time)
+    
 
-print("End Training. Saving best params...")
+print("End Training. Saving best params ...")
 
 pickle.dump(params,outfile)
