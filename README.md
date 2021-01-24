@@ -1,5 +1,5 @@
 # DeepFair With JAX
-Reimplementation of [DeepFair: Deep Learning for Improving Fairness in Recommender Systems](https://arxiv.org/pdf/2006.05255v1.pdf) with [JAX](https://github.com/google/jax) and [Haiku](https://github.com/deepmind/dm-haiku). Uses **just-in-time (JIT)** compiling to speed up training and evaluation process. Feel free to assign an issue if there is any suggestions or corrections to improve the code.
+Reimplementation of Deep Learning Model via Multilayer Neural Network Training (MLN) in [DeepFair: Deep Learning for Improving Fairness in Recommender Systems](https://arxiv.org/pdf/2006.05255v1.pdf) with [JAX](https://github.com/google/jax) and [Haiku](https://github.com/deepmind/dm-haiku). Uses **just-in-time (JIT)** compiling to speed up training and evaluation process. Feel free to assign an issue if there is any suggestions or corrections to improve the code.
 
 # Dataset
 [MovieLens 1M Dataset](https://grouplens.org/datasets/movielens/1m/). Same as the dataset used for experiment in DeepFair's research paper.
@@ -9,6 +9,12 @@ Reimplementation of [DeepFair: Deep Learning for Improving Fairness in Recommend
 python test.py
 ```
 This script will generate `experiment_data.npz` which contains input vectors and other vectors for calculating loss function.
+
+# Data Visualisation
+```
+python dist.py
+```
+This script will generate proportions of category of users in MovieLens (top-left), Item Minority Index (IM) and User Minority Index (UM) distribution (top-right), UM comparative between groups (bottom-left) and accuracy of user classification via UM (bottom-right).
 
 # Training Data
 ```
@@ -20,7 +26,7 @@ This script will use `experiment_data.npz` to train the model. The parameters fo
 Coming soon.
 
 # Future Plans
-Optimising the training. Implement `test.py` for evaluation to achieve results as close as the research paper. Implement the model in other frameworks and compare **JIT** performance between frameworks.
+Optimising the training. Implement `test.py` for evaluation. Implement the model in other frameworks and compare **JIT** performance between frameworks.
 
 # References
 1. Jesús Bobadilla, Raúl Lara-Cabrera, Ángel González-Prieto, Fernando Ortega, (2020). DeepFair: Deep Learning for Improving Fairness in Recommender Systems[online]. Avaliable from :arXiv:2006.05255.
