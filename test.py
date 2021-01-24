@@ -117,7 +117,6 @@ fairness_list = np.array(fairness_list)
 acc_list_norm = (acc_list - min(acc_list))/(max(acc_list)-min(acc_list))
 fairness_list_norm = (fairness_list - min(fairness_list))/(max(fairness_list)-min(fairness_list))
 
-print(fairness_list)
 
 print("End Testing. Displaying results ...")
 
