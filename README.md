@@ -1,4 +1,4 @@
-# DeepFair With JAX
+# Reimplementation of Machine Learning Fairness Algorithm with JIT Compilation.
 Reimplementation of Deep Learning Model via Multilayer Neural Network Training (MLN) in [DeepFair: Deep Learning for Improving Fairness in Recommender Systems](https://arxiv.org/pdf/2006.05255v1.pdf) with [JAX](https://github.com/google/jax) and [Haiku](https://github.com/deepmind/dm-haiku). Uses **just-in-time (JIT)** compiling to speed up training and evaluation process. There are some difference between the original idea in the paper and the implementation in this code, hence results can be different from what is shown in the paper.  Feel free to assign an issue if there is any suggestions or corrections to improve the code. 
 
 # Dataset
